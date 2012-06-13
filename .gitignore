@@ -1,6 +1,15 @@
-# Build Folders (you can keep bin if you'd like, to store dlls and pdbs)
-bin
-obj
+TestResult.xml
 
-# mstest test results
-TestResults
+bin
+deploy
+deploy/*
+obj
+*.suo
+*.cache
+*.tmp
+
+_Resharper.*
+
+*.resharper
+*.resharper.user
+*.csproj.user
