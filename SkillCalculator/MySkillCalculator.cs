@@ -10,105 +10,42 @@ namespace SkillCalculator
 {
     public sealed class MySkillCalculator
     {
-        private const string NoOneId = "-";
-
-        private Dictionary<string,MyPlayer> Players = new Dictionary<string,MyPlayer>();
+        public Dictionary<string,MyPlayer> Players = new Dictionary<string,MyPlayer>();
         private Queue<MyGame> Games = new Queue<MyGame>();
 
         public void LoadPlayers()
         {
-            using (var sr = File.OpenText("Players.txt"))
+            var players = SevenWondersParser.GetPlayers("Games.csv");
+            foreach (var player in players)
             {
-                var line = sr.ReadLine();
-                int lineNumber = 0;
-                while (line != null)
-                {
-                    if (lineNumber == 0)
-                    {
-                        line = sr.ReadLine();
-                        lineNumber++;
-                        continue;
-                    }
-
-                    var parts = line.Split(',');
-                    string name = parts[0];
-                    string id = parts[1];
-
-                    var player = new MyPlayer() { Name = name, Id = id };
-                    Players.Add(player.Id,player);
-
-                    line = sr.ReadLine();
-                }
+                Players.Add(player.Id, player);
             }
         }
 
         public void LoadGames()
         {
-            using (var sr = File.OpenText("Games.txt"))
+            // Seed the engine with dummy values for all players so we do not fail a dictionary lookup later.
+            Games.Enqueue(new MyGame()
             {
-                var line = sr.ReadLine();
-                int lineNumber = 0;
-                while (line != null)
+                RankedParticipants = SevenWondersParser.ReadPlayers("Games.csv").Select(p => new MyRankedPlayer()
                 {
-                    if (lineNumber == 0)
-                    {
-                        line = sr.ReadLine();
-                        lineNumber++;
-                        continue;
-                    }
+                    Id = p.Id,
+                    Name = p.Name,
+                    Rank = 0,
+                }).ToList(),
+            });
 
-                    var parts = line.Split(',');
-                    string playerId0 = parts[0];
-                    string playerId1 = parts[1];
-                    string playerId2 = parts[2];
-                    string playerId3 = parts[3];
-                    string playerId4 = parts[4];
-                    string playerId5 = parts[5];
-
-                    string playerId0Rank = parts[6];
-                    string playerId1Rank = parts[7];
-                    string playerId2Rank = parts[8];
-                    string playerId3Rank = parts[9];
-                    string playerId4Rank = parts[10];
-                    string playerId5Rank = parts[11];
-
-                    List<MyRankedPlayer> rankedParticipants = new List<MyRankedPlayer>();
-
-                    AddPlayer(playerId0, playerId0Rank, rankedParticipants);
-                    AddPlayer(playerId1, playerId1Rank, rankedParticipants);
-                    AddPlayer(playerId2, playerId2Rank, rankedParticipants);
-                    AddPlayer(playerId3, playerId3Rank, rankedParticipants);
-                    AddPlayer(playerId4, playerId4Rank, rankedParticipants);
-                    AddPlayer(playerId5, playerId5Rank, rankedParticipants);
-
-                    MyGame game = new MyGame()
-                    {
-                        RankedParticipants = rankedParticipants,
-                    };
-
-                    rankedParticipants.Sort(new Comparison<MyRankedPlayer>((a, b) => a.Rank - b.Rank));
-                    Games.Enqueue(game);
-
-                    line = sr.ReadLine();
-                }
+            foreach (var game in SevenWondersParser.ReadGames("Games.csv"))
+            {
+                Games.Enqueue(game);
             }
         }
 
-        private void AddPlayer(string playerId, string playerIdRank, List<MyRankedPlayer> rankedParticipants)
-        {
-            if (playerId == NoOneId)
-                return;
-
-            var player = Players[playerId];
-            rankedParticipants.Add(new MyRankedPlayer()
-            {
-                Id = playerId,
-                Name = player.Name,
-                Rank = int.Parse(playerIdRank),
-            });
-        }
-
         private Dictionary<Player, Rating> m_currentRatings;
+        public Dictionary<Player, Rating> CurrentRatings
+        {
+            get { return m_currentRatings; }
+        }
 
         public void CalculateInitalGameSkills()
         {
@@ -119,15 +56,17 @@ namespace SkillCalculator
             
             var newRatings = TrueSkillCalculator.CalculateNewRatings(
                 GameInfo.DefaultGameInfo, teams, ranks);
-            double matchQuality = TrueSkillCalculator.CalculateMatchQuality(
-                GameInfo.DefaultGameInfo, teams);
+            //double matchQuality = TrueSkillCalculator.CalculateMatchQuality(
+            //    GameInfo.DefaultGameInfo, teams);
 
             System.Diagnostics.Debug.Assert(m_currentRatings == null);
 
             m_currentRatings = new Dictionary<Player, Rating>();
 
             foreach (var kvp in newRatings)
+            {
                 m_currentRatings.Add(kvp.Key, kvp.Value);
+            }
         }
 
         public bool GetNextGameResults()
@@ -161,6 +100,7 @@ namespace SkillCalculator
                     m_currentRatings[kvp.Key] = kvp.Value;
                 else
                     ;
+                    //m_currentRatings[kvp.Key] = kvp.Value;
             }
         }
     }

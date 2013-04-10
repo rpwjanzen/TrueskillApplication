@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 
 namespace SkillCalculator
 {
@@ -22,6 +23,12 @@ namespace SkillCalculator
             while (hasNextGame)
             {
                 hasNextGame = s.GetNextGameResults();
+            }
+
+            m_textBox.Text += "info mean stddev" + Environment.NewLine;
+            foreach (var kvp in s.CurrentRatings)
+            {
+                m_textBox.Text += string.Format("{0} {1} {2}", kvp.Key.Id, kvp.Value.Mean, kvp.Value.StandardDeviation) + Environment.NewLine;
             }
         }
     }
